@@ -7,7 +7,7 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 
 | Tool | Version(s) | Source |
 | --- | --- | --- |
-| OpenJDK (full devel packages) | 8, 21, 25 | UBI AppStream rpms; JDK 25 falls back to Eclipse Temurin via curl if the repos don't carry it yet |
+| OpenJDK (full devel packages) | 8, 17, 21, 25 | UBI AppStream rpms; JDK 25 falls back to Eclipse Temurin via curl if the repos don't carry it yet |
 | Maven | RHEL 9 packaged | UBI AppStream |
 | Gradle | 9.2.0 | curl from services.gradle.org (sha256-verified) |
 | VS Code | latest | Microsoft rpm repo |

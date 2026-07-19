@@ -8,13 +8,13 @@ set -euo pipefail
 # stage falls back to Eclipse Temurin 25.
 JAVA_PACKAGES=(
     java-1.8.0-openjdk-devel
+    java-17-openjdk-devel
     java-21-openjdk-devel
 )
 
 TOOL_PACKAGES=(
     maven
-    maven-openjdk21 # bind maven to JDK 21; without this it defaults to
-                    # maven-openjdk17 and drags a JDK we don't ship back in
+    maven-openjdk21 # pin maven's JDK binding to 21 (it defaults to 17)
     git
     git-lfs
     code            # VS Code, from the Microsoft repo
