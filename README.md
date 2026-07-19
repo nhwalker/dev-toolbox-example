@@ -28,10 +28,10 @@ Repos are consulted in this order of preference:
    `priority=200` so they act purely as a *fallback* for packages the public
    UBI repos do not carry (see `repos/rocky.repo`).
 
-Tools with no rpm available anywhere (Gradle, Eclipse, and the Temurin JDK 25
-fallback) are downloaded with curl at build time by
-`scripts/30-install-curl-tools.sh`. **TODO:** vendor these artifacts into the
-repo (with checksums) instead of downloading at build time.
+Tools with no rpm available anywhere (Gradle, Eclipse, and the Temurin JDK
+fallback) are downloaded with curl at build time — one script per tool under
+`scripts/`. **TODO:** vendor these artifacts into the repo (with checksums)
+instead of downloading at build time.
 
 ## Building
 
@@ -69,7 +69,10 @@ repos/rocky.repo                 Rocky Linux 9 fallback repos (priority=200)
 repos/vscode.repo                Microsoft VS Code rpm repo
 scripts/10-setup-repos.sh        Enable CRB, install EPEL
 scripts/20-install-dnf-tools.sh  Everything installable via dnf
-scripts/30-install-curl-tools.sh Gradle, Eclipse, Temurin fallback + smoke tests
+scripts/30-install-gradle.sh     Gradle (curl, sha256-verified)
+scripts/31-install-eclipse.sh    Eclipse IDE (curl)
+scripts/32-install-temurin-fallback.sh  Temurin JDK, only if the rpm JDK is missing
+scripts/90-verify-tools.sh       Final smoke test of every installed tool
 .github/workflows/build-image.yml  CI: build (PRs) and publish to GHCR (main)
 ```
 

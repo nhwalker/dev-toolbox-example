@@ -29,11 +29,17 @@ RUN bash /usr/local/share/toolbox-build/10-setup-repos.sh
 
 RUN bash /usr/local/share/toolbox-build/20-install-dnf-tools.sh
 
+# Curl-installed tools, one script (and one layer) per tool.
 RUN GRADLE_VERSION="${GRADLE_VERSION}" \
     GRADLE_SHA256="${GRADLE_SHA256}" \
-    ECLIPSE_RELEASE="${ECLIPSE_RELEASE}" \
-    TEMURIN_FALLBACK_MAJOR="${TEMURIN_FALLBACK_MAJOR}" \
-    bash /usr/local/share/toolbox-build/30-install-curl-tools.sh
+    bash /usr/local/share/toolbox-build/30-install-gradle.sh
 
-# Final cleanup so the layers above stay as small as possible.
+RUN ECLIPSE_RELEASE="${ECLIPSE_RELEASE}" \
+    bash /usr/local/share/toolbox-build/31-install-eclipse.sh
+
+RUN TEMURIN_FALLBACK_MAJOR="${TEMURIN_FALLBACK_MAJOR}" \
+    bash /usr/local/share/toolbox-build/32-install-temurin-fallback.sh
+
+# Final smoke test and cleanup so the layers above stay as small as possible.
+RUN bash /usr/local/share/toolbox-build/90-verify-tools.sh
 RUN dnf clean all && rm -rf /var/cache/dnf /var/cache/yum /tmp/*
