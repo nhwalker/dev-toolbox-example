@@ -3,18 +3,18 @@
 # repos (UBI/CRB -> EPEL -> Rocky fallback -> Microsoft repo for VS Code).
 set -euo pipefail
 
-# Java toolchains. RHEL 9 ships full OpenJDK devel packages for 8/11/17/21.
+# Java toolchains. RHEL 9 ships full OpenJDK devel packages for these.
 # JDK 25 is attempted here too; if the repos don't carry it yet the curl
 # stage falls back to Eclipse Temurin 25.
 JAVA_PACKAGES=(
     java-1.8.0-openjdk-devel
-    java-11-openjdk-devel
-    java-17-openjdk-devel
     java-21-openjdk-devel
 )
 
 TOOL_PACKAGES=(
     maven
+    maven-openjdk21 # bind maven to JDK 21; without this it defaults to
+                    # maven-openjdk17 and drags a JDK we don't ship back in
     git
     git-lfs
     code            # VS Code, from the Microsoft repo
