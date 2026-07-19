@@ -22,6 +22,7 @@ fi
 # (e.g. 9.6), which EPEL's metalink does not accept, so pin it to "9".
 dnf -y install \
     https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+# shellcheck disable=SC2016  # the literal $releasever is the point here
 sed -i 's/\$releasever/9/g' /etc/yum.repos.d/epel*.repo
 
 dnf -y makecache

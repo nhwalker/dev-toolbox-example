@@ -4,13 +4,47 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Weekly rebuild so the published image picks up RHEL security updates
+    # even when nothing changes in this repo.
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 env:
   IMAGE_NAME: rhel9-dev-toolbox
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shellcheck build scripts
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q shellcheck
+          shellcheck scripts/*.sh
+
+      - name: Hadolint Containerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Containerfile
+          failure-threshold: warning
+          # DL3007: tracking ubi9/toolbox:latest is deliberate — the image
+          #   should follow RHEL 9 updates.
+          # DL3041: pinning dnf package versions is impractical for a
+          #   rolling toolbox image.
+          # DL3059: one RUN per install script is deliberate, for layer
+          #   caching per tool.
+          ignore: DL3007,DL3041,DL3059
+
   build:
+    needs: lint
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -34,7 +68,8 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" \
             | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
           registry_image="ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}"
+          snapshot_tag="$(date +%Y%m%d)-${GITHUB_SHA::7}"
           podman tag "${IMAGE_NAME}" "${registry_image}:latest"
-          podman tag "${IMAGE_NAME}" "${registry_image}:$(date +%Y%m%d)-${GITHUB_SHA::7}"
+          podman tag "${IMAGE_NAME}" "${registry_image}:${snapshot_tag}"
           podman push "${registry_image}:latest"
-          podman push "${registry_image}:$(date +%Y%m%d)-${GITHUB_SHA::7}"
+          podman push "${registry_image}:${snapshot_tag}"

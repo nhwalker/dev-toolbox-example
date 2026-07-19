@@ -73,7 +73,8 @@ scripts/30-install-gradle.sh     Gradle (curl, sha256-verified)
 scripts/31-install-eclipse.sh    Eclipse IDE (curl)
 scripts/32-install-temurin-fallback.sh  Temurin JDK, only if the rpm JDK is missing
 scripts/90-verify-tools.sh       Final smoke test of every installed tool
-.github/workflows/build-image.yml  CI: build (PRs) and publish to GHCR (main)
+.github/workflows/build-image.yml  CI/CD: lint + build (PRs), publish to
+                                   GHCR (main, weekly schedule, manual runs)
 ```
 
 ## Bumping versions
