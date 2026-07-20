@@ -16,6 +16,11 @@ done
 
 gradle --version
 test -x /opt/eclipse/eclipse
+test -x /opt/jmc/jmc
+asprof --version
+command -v jfrconv >/dev/null || { echo "ERROR: jfrconv not on PATH" >&2; exit 1; }
+test -x /opt/mat/MemoryAnalyzer
+test -x /usr/local/bin/mat-parse-heapdump
 eclipse-offline-package --help >/dev/null
 node --version
 npm --version
