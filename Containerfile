@@ -12,7 +12,7 @@ FROM registry.access.redhat.com/ubi9/toolbox:latest
 LABEL com.github.containers.toolbox="true" \
       name="rhel9-dev-toolbox" \
       version="9" \
-      summary="RHEL 9 Toolbx image with Java 8/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, Cline, Allure, git, and the podman client" \
+      summary="RHEL 9 Toolbx image with Java 8/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, JDK Mission Control, Cline, Allure, git, and the podman client" \
       usage="Use with the toolbox(1) command: toolbox create --image <this image>"
 
 # Versions for the curl-installed tools. Bump these to upgrade.
@@ -26,6 +26,11 @@ ARG CLINE_KANBAN_VERSION=0.1.70
 # Allure checksum comes from Maven Central (<artifact>.tgz.sha256)
 ARG ALLURE_VERSION=2.44.0
 ARG ALLURE_SHA256=7021a90828c00cd6ec992027cce48e8a94bd87fad43d0c2dcac4795cadc178d7
+# JDK Mission Control (Eclipse Adoptium build). Per-arch checksums are
+# listed on the GitHub release's assets page, see 34-install-jmc.sh
+ARG JMC_VERSION=9.1.2
+ARG JMC_SHA256_X86_64=3085244b8f32bbd0646c8109a9f65f7089497e07e1d6bbc62f64da942d27d748
+ARG JMC_SHA256_AARCH64=3247c0e4203d1dee0e20d5d438339fd23f2adbda152e26467cea3b07856fc6c4
 
 COPY repos/ /etc/yum.repos.d/
 COPY scripts/ /usr/local/share/toolbox-build/
@@ -51,6 +56,11 @@ RUN CLINE_VERSION="${CLINE_VERSION}" \
 RUN ALLURE_VERSION="${ALLURE_VERSION}" \
     ALLURE_SHA256="${ALLURE_SHA256}" \
     bash /usr/local/share/toolbox-build/33-install-allure.sh
+
+RUN JMC_VERSION="${JMC_VERSION}" \
+    JMC_SHA256_X86_64="${JMC_SHA256_X86_64}" \
+    JMC_SHA256_AARCH64="${JMC_SHA256_AARCH64}" \
+    bash /usr/local/share/toolbox-build/34-install-jmc.sh
 
 # VS Code extension drop-in: every .vsix in the repo's vsix/ directory is
 # installed as a built-in extension. The COPY sits directly above its RUN

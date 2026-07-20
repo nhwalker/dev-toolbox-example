@@ -16,6 +16,7 @@ done
 
 gradle --version
 test -x /opt/eclipse/eclipse
+test -x /opt/jmc/jmc
 eclipse-offline-package --help >/dev/null
 node --version
 npm --version
