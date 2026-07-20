@@ -7,7 +7,7 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 
 | Tool | Version(s) | Source |
 | --- | --- | --- |
-| OpenJDK (full devel packages) | 8, 17, 21, 25 | UBI AppStream rpms; JDK 25 falls back to Eclipse Temurin via curl if the repos don't carry it yet |
+| OpenJDK (full devel packages) | 8, 17, 21, 25 | UBI AppStream rpms |
 | Maven | RHEL 9 packaged | UBI AppStream |
 | Gradle | 9.2.0 | curl from services.gradle.org (sha256-verified) |
 | VS Code | latest | Microsoft rpm repo |
@@ -32,10 +32,10 @@ Repos are consulted in this order of preference:
    `priority=200` so they act purely as a *fallback* for packages the public
    UBI repos do not carry (see `repos/rocky.repo`).
 
-Tools with no rpm available anywhere (Gradle, Eclipse, and the Temurin JDK
-fallback) are downloaded with curl at build time — one script per tool under
-`scripts/`. **TODO:** vendor these artifacts into the repo (with checksums)
-instead of downloading at build time.
+Tools with no rpm available anywhere (Gradle and Eclipse) are downloaded
+with curl at build time — one script per tool under `scripts/`. **TODO:**
+vendor these artifacts into the repo (with checksums) instead of
+downloading at build time.
 
 ## Building
 
@@ -75,7 +75,6 @@ scripts/10-setup-repos.sh        Enable CRB, install EPEL
 scripts/20-install-dnf-tools.sh  Everything installable via dnf
 scripts/30-install-gradle.sh     Gradle (curl, sha256-verified)
 scripts/31-install-eclipse.sh    Eclipse IDE (curl)
-scripts/32-install-temurin-fallback.sh  Temurin JDK, only if the rpm JDK is missing
 scripts/40-configure-java-homes.sh  JAVA_HOME + versioned JAVA<N>_HOME exports
 scripts/90-verify-tools.sh       Final smoke test of every installed tool
 .github/workflows/build-image.yml  CI/CD: lint + build (PRs), publish to

@@ -20,7 +20,6 @@ LABEL com.github.containers.toolbox="true" \
 ARG GRADLE_VERSION=9.2.0
 ARG GRADLE_SHA256=df67a32e86e3276d011735facb1535f64d0d88df84fa87521e90becc2d735444
 ARG ECLIPSE_RELEASE=2025-12
-ARG TEMURIN_FALLBACK_MAJOR=25
 
 COPY repos/ /etc/yum.repos.d/
 COPY scripts/ /usr/local/share/toolbox-build/
@@ -36,9 +35,6 @@ RUN GRADLE_VERSION="${GRADLE_VERSION}" \
 
 RUN ECLIPSE_RELEASE="${ECLIPSE_RELEASE}" \
     bash /usr/local/share/toolbox-build/31-install-eclipse.sh
-
-RUN TEMURIN_FALLBACK_MAJOR="${TEMURIN_FALLBACK_MAJOR}" \
-    bash /usr/local/share/toolbox-build/32-install-temurin-fallback.sh
 
 # JAVA_HOME (default JDK 21) plus JAVA<N>_HOME for every installed JDK,
 # exported for login shells via /etc/profile.d/java-homes.sh. The ENV below

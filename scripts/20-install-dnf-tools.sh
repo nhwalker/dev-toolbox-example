@@ -3,13 +3,13 @@
 # repos (UBI/CRB -> EPEL -> Rocky fallback -> Microsoft repo for VS Code).
 set -euo pipefail
 
-# Java toolchains. RHEL 9 ships full OpenJDK devel packages for these.
-# JDK 25 is attempted here too; if the repos don't carry it yet the curl
-# stage falls back to Eclipse Temurin 25.
+# Java toolchains. RHEL 9 ships full OpenJDK devel packages for all of
+# these (JDK 25 since RHEL 9.8).
 JAVA_PACKAGES=(
     java-1.8.0-openjdk-devel
     java-17-openjdk-devel
     java-21-openjdk-devel
+    java-25-openjdk-devel
 )
 
 TOOL_PACKAGES=(
@@ -36,13 +36,6 @@ SUPPORT_PACKAGES=(
 )
 
 dnf -y install "${JAVA_PACKAGES[@]}" "${TOOL_PACKAGES[@]}" "${SUPPORT_PACKAGES[@]}"
-
-# JDK 25 separately, so an as-yet-missing package doesn't fail the whole
-# transaction. The curl stage installs Temurin 25 instead when this fails.
-if ! dnf -y install java-25-openjdk-devel; then
-    echo "java-25-openjdk-devel not available in the configured repos;" \
-         "Temurin ${TEMURIN_FALLBACK_MAJOR:-25} will be installed by the curl stage." >&2
-fi
 
 # Register git-lfs system-wide so every toolbox user gets the filters.
 git lfs install --system

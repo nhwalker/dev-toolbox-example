@@ -2,30 +2,23 @@
 # Generate /etc/profile.d/java-homes.sh so every shell in the toolbox gets:
 #   JAVA<N>_HOME  for each installed JDK (e.g. JAVA8_HOME, JAVA21_HOME)
 #   JAVA_HOME     pointing at the default JDK (21)
-# Runs after both the rpm and curl install stages so each version resolves
-# no matter which one provided it (rpm symlink vs Temurin under /opt/java).
 set -euo pipefail
 
 DEFAULT_JAVA_MAJOR=21
 
-# Candidate locations per major version, in order of preference. The
-# /usr/lib/jvm/* symlinks are owned by the RHEL openjdk rpms; /opt/java is
-# where 32-install-temurin-fallback.sh puts a curl-installed JDK.
+# The /usr/lib/jvm/* major-version symlinks are owned by the RHEL openjdk
+# rpms; JDK 8 predates the plain-number naming scheme.
 java_home_for() {
-    local major=$1 candidate
-    local candidates=()
+    local major=$1 home
     if [[ "${major}" == "8" ]]; then
-        candidates+=("/usr/lib/jvm/java-1.8.0")
+        home="/usr/lib/jvm/java-1.8.0"
     else
-        candidates+=("/usr/lib/jvm/java-${major}")
+        home="/usr/lib/jvm/java-${major}"
     fi
-    candidates+=("/opt/java/temurin-${major}")
-    for candidate in "${candidates[@]}"; do
-        if [[ -x "${candidate}/bin/java" ]]; then
-            echo "${candidate}"
-            return 0
-        fi
-    done
+    if [[ -x "${home}/bin/java" ]]; then
+        echo "${home}"
+        return 0
+    fi
     return 1
 }
 
