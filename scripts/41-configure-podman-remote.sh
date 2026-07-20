@@ -38,10 +38,17 @@ cat > "${profile}" <<'EOF'
 if [ -S "${XDG_RUNTIME_DIR:-/nonexistent}/podman/podman.sock" ]; then
     export CONTAINER_HOST="${CONTAINER_HOST:-unix://${XDG_RUNTIME_DIR}/podman/podman.sock}"
     export DOCKER_HOST="${DOCKER_HOST:-${CONTAINER_HOST}}"
-    # Testcontainers' Ryuk reaper needs a privileged container under
-    # rootless podman. If Ryuk still fails to start, disable it instead:
-    #   export TESTCONTAINERS_RYUK_DISABLED=true
-    export TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED="${TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED:-true}"
+    # Testcontainers' Ryuk reaper is unreliable under rootless podman:
+    # SELinux blocks its access to the mounted socket unless the container
+    # runs privileged, and even then behavior varies by podman version.
+    # Default to disabling it; cleanup falls back to Testcontainers' JVM
+    # shutdown hook (containers only leak on a hard JVM kill). Opt back in
+    # with TESTCONTAINERS_RYUK_DISABLED=false, which also enables the
+    # privileged mode Ryuk needs to reach the socket past SELinux.
+    export TESTCONTAINERS_RYUK_DISABLED="${TESTCONTAINERS_RYUK_DISABLED:-true}"
+    if [ "${TESTCONTAINERS_RYUK_DISABLED}" != "true" ]; then
+        export TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED="${TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED:-true}"
+    fi
 fi
 EOF
 

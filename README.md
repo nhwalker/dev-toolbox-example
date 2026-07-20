@@ -134,10 +134,16 @@ socket and exports:
   Docker-API clients like **Testcontainers**, docker-java, and
   docker-compose work against it unchanged. `mvn verify` / `gradle test`
   with Testcontainers just work — no per-project configuration;
-- `TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true` — Testcontainers'
-  Ryuk cleanup container needs `--privileged` under rootless podman. If
-  Ryuk still gives you trouble, set `TESTCONTAINERS_RYUK_DISABLED=true`
-  (cleanup then relies on the JVM shutdown hook).
+- `TESTCONTAINERS_RYUK_DISABLED=true` — Ryuk, Testcontainers' cleanup
+  reaper, is unreliable under rootless podman (SELinux blocks its access
+  to the mounted socket, and behavior varies by podman version even with
+  the privileged workaround), so it is off by default. Cleanup falls back
+  to Testcontainers' JVM shutdown hook — containers only leak if the JVM
+  is hard-killed. To try Ryuk anyway, `export
+  TESTCONTAINERS_RYUK_DISABLED=false` before opening the shell; the
+  profile script then also sets
+  `TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true`, the privileged mode
+  Ryuk needs to get past SELinux to the socket.
 
 Each variable is only set if the socket exists and you have not already
 set it yourself. If `podman ps` reports a connection error, the socket is
