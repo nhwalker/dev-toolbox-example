@@ -27,6 +27,7 @@ SUPPORT_PACKAGES=(
     webkit2gtk3     # Eclipse internal browser
     xdg-utils
     alsa-lib
+    jq              # used by 50-install-vsix-extensions.sh
     unzip
     zip
     tar

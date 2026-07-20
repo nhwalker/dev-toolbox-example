@@ -11,6 +11,7 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 | Maven | RHEL 9 packaged | UBI AppStream |
 | Gradle | 9.2.0 | curl from services.gradle.org (sha256-verified) |
 | VS Code | latest | Microsoft rpm repo |
+| VS Code extensions | whatever is in `vsix/` | drop-in `.vsix` files, baked in at build time |
 | Eclipse IDE for Java Developers | 2025-12 | curl from download.eclipse.org |
 | Git + Git LFS | RHEL 9 packaged | UBI / EPEL / Rocky |
 
@@ -76,6 +77,8 @@ scripts/20-install-dnf-tools.sh  Everything installable via dnf
 scripts/30-install-gradle.sh     Gradle (curl, sha256-verified)
 scripts/31-install-eclipse.sh    Eclipse IDE (curl)
 scripts/40-configure-java-homes.sh  JAVA_HOME + versioned JAVA<N>_HOME exports
+scripts/50-install-vsix-extensions.sh  Installs vsix/*.vsix into VS Code
+vsix/                            Drop-in folder for VS Code .vsix extensions
 scripts/90-verify-tools.sh       Final smoke test of every installed tool
 .github/workflows/build-image.yml  CI/CD: lint + build (PRs), publish to
                                    GHCR (main, weekly schedule, manual runs)
