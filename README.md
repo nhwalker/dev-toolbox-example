@@ -14,6 +14,8 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 | Cline CLI + kanban board | 3.0.46 / 0.1.70 | npm (installed globally at build time) |
 | Allure test reports | 2.44.0 | curl from Maven Central (sha256-verified) |
 | JDK Mission Control (JFR analyzer) | 9.1.2 | curl from GitHub `adoptium/jmc-build` (sha256-verified) |
+| async-profiler (`asprof`, `jfrconv`) | 4.4 | curl from GitHub `async-profiler/async-profiler` (sha256-verified) |
+| Eclipse Memory Analyzer (`mat`, `mat-parse-heapdump`) | 1.17.0 | curl from download.eclipse.org (sha512-verified) |
 | VS Code | latest | Microsoft rpm repo |
 | VS Code extensions | clangd 0.6.0, Cline 4.0.9 + whatever is in `vsix/` | drop-in `.vsix` files, baked in at build time |
 | C toolchain | clang/clangd, gcc, make, cmake, gdb, bear | UBI AppStream + EPEL (bear) |

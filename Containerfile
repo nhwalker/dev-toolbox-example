@@ -12,7 +12,7 @@ FROM registry.access.redhat.com/ubi9/toolbox:latest
 LABEL com.github.containers.toolbox="true" \
       name="rhel9-dev-toolbox" \
       version="9" \
-      summary="RHEL 9 Toolbx image with Java 8/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, JDK Mission Control, Cline, Allure, git, and the podman client" \
+      summary="RHEL 9 Toolbx image with Java 8/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, JDK Mission Control, async-profiler, Eclipse MAT, Cline, Allure, git, and the podman client" \
       usage="Use with the toolbox(1) command: toolbox create --image <this image>"
 
 # Versions for the curl-installed tools. Bump these to upgrade.
@@ -31,6 +31,16 @@ ARG ALLURE_SHA256=7021a90828c00cd6ec992027cce48e8a94bd87fad43d0c2dcac4795cadc178
 ARG JMC_VERSION=9.1.2
 ARG JMC_SHA256_X86_64=3085244b8f32bbd0646c8109a9f65f7089497e07e1d6bbc62f64da942d27d748
 ARG JMC_SHA256_AARCH64=3247c0e4203d1dee0e20d5d438339fd23f2adbda152e26467cea3b07856fc6c4
+# async-profiler. Per-arch checksums are listed on the GitHub release's
+# assets page, see 35-install-async-profiler.sh
+ARG ASYNC_PROFILER_VERSION=4.4
+ARG ASYNC_PROFILER_SHA256_X86_64=1233f26fc95753e75ce32733bbcaf8f0bedc2c098b0e798af87935b08a63b24e
+ARG ASYNC_PROFILER_SHA256_AARCH64=86ff97b4436accdb6d7bb65c1cf6e38a756f2037a921994d8fa1dcb97d1dc53c
+# Eclipse Memory Analyzer (MAT). eclipse.org publishes sha512 checksums,
+# see 36-install-mat.sh for the sums.php endpoint
+ARG MAT_VERSION=1.17.0.20260601
+ARG MAT_SHA512_X86_64=a4127c587d425cbe7167873fdc1337950ee7c01bf15dd429b6ad3f26e8ba3bbd0aee9a693aff60f25d6068c9e817b1de617ac94c85ece15a48fda17c1b9b12cd
+ARG MAT_SHA512_AARCH64=8dc5c85c6f09813826c8bd3d9cf3748020d271e3e446f531fe90698a9800e91c5ad3a87a4c66a2f105dbd5d43d9919434ec2f44391dc03621050cd76f962fe4b
 
 COPY repos/ /etc/yum.repos.d/
 COPY scripts/ /usr/local/share/toolbox-build/
@@ -61,6 +71,16 @@ RUN JMC_VERSION="${JMC_VERSION}" \
     JMC_SHA256_X86_64="${JMC_SHA256_X86_64}" \
     JMC_SHA256_AARCH64="${JMC_SHA256_AARCH64}" \
     bash /usr/local/share/toolbox-build/34-install-jmc.sh
+
+RUN ASYNC_PROFILER_VERSION="${ASYNC_PROFILER_VERSION}" \
+    ASYNC_PROFILER_SHA256_X86_64="${ASYNC_PROFILER_SHA256_X86_64}" \
+    ASYNC_PROFILER_SHA256_AARCH64="${ASYNC_PROFILER_SHA256_AARCH64}" \
+    bash /usr/local/share/toolbox-build/35-install-async-profiler.sh
+
+RUN MAT_VERSION="${MAT_VERSION}" \
+    MAT_SHA512_X86_64="${MAT_SHA512_X86_64}" \
+    MAT_SHA512_AARCH64="${MAT_SHA512_AARCH64}" \
+    bash /usr/local/share/toolbox-build/36-install-mat.sh
 
 # VS Code extension drop-in: every .vsix in the repo's vsix/ directory is
 # installed as a built-in extension. The COPY sits directly above its RUN
