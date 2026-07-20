@@ -21,5 +21,12 @@ javac -version
 mvn --version
 git --version
 git lfs version
+clangd --version
+clang --version | head -1
+gcc --version | head -1
+cmake --version | head -1
+gdb --version | head -1
+make --version | head -1
+bear --version
 code --version --user-data-dir /tmp/vscode-smoke || true   # code exits non-zero without a display on some versions
 ls -d /usr/lib/jvm/java-* 2>/dev/null || true

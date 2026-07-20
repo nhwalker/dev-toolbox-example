@@ -11,7 +11,8 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 | Maven | RHEL 9 packaged | UBI AppStream |
 | Gradle | 9.2.0 | curl from services.gradle.org (sha256-verified) |
 | VS Code | latest | Microsoft rpm repo |
-| VS Code extensions | whatever is in `vsix/` | drop-in `.vsix` files, baked in at build time |
+| VS Code extensions | clangd 0.6.0 + whatever is in `vsix/` | drop-in `.vsix` files, baked in at build time |
+| C toolchain | clang/clangd, gcc, make, cmake, gdb, bear | UBI AppStream + EPEL (bear) |
 | Eclipse IDE for Java Developers | 2025-12 | curl from download.eclipse.org |
 | Git + Git LFS | RHEL 9 packaged | UBI / EPEL / Rocky |
 
