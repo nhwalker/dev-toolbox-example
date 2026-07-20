@@ -14,8 +14,12 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 | Eclipse IDE for Java Developers | 2025-12 | curl from download.eclipse.org |
 | Git + Git LFS | RHEL 9 packaged | UBI / EPEL / Rocky |
 
-Switch between installed JDKs inside the toolbox with
-`sudo alternatives --config java`.
+`JAVA_HOME` points at JDK 21 by default, and each installed JDK also gets a
+versioned variable: `JAVA8_HOME`, `JAVA17_HOME`, `JAVA21_HOME`,
+`JAVA25_HOME` (exported via `/etc/profile.d/java-homes.sh`). Handy for
+Maven/Gradle toolchains or per-project overrides like
+`JAVA_HOME=$JAVA17_HOME mvn verify`. To switch the default `java` on the
+PATH, use `sudo alternatives --config java`.
 
 ## Package sources
 
@@ -72,6 +76,7 @@ scripts/20-install-dnf-tools.sh  Everything installable via dnf
 scripts/30-install-gradle.sh     Gradle (curl, sha256-verified)
 scripts/31-install-eclipse.sh    Eclipse IDE (curl)
 scripts/32-install-temurin-fallback.sh  Temurin JDK, only if the rpm JDK is missing
+scripts/40-configure-java-homes.sh  JAVA_HOME + versioned JAVA<N>_HOME exports
 scripts/90-verify-tools.sh       Final smoke test of every installed tool
 .github/workflows/build-image.yml  CI/CD: lint + build (PRs), publish to
                                    GHCR (main, weekly schedule, manual runs)

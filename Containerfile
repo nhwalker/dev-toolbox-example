@@ -40,6 +40,13 @@ RUN ECLIPSE_RELEASE="${ECLIPSE_RELEASE}" \
 RUN TEMURIN_FALLBACK_MAJOR="${TEMURIN_FALLBACK_MAJOR}" \
     bash /usr/local/share/toolbox-build/32-install-temurin-fallback.sh
 
+# JAVA_HOME (default JDK 21) plus JAVA<N>_HOME for every installed JDK,
+# exported for login shells via /etc/profile.d/java-homes.sh. The ENV below
+# additionally covers non-login shells; it must match the default major
+# version chosen in 40-configure-java-homes.sh.
+RUN bash /usr/local/share/toolbox-build/40-configure-java-homes.sh
+ENV JAVA_HOME=/usr/lib/jvm/java-21
+
 # Final smoke test and cleanup so the layers above stay as small as possible.
 RUN bash /usr/local/share/toolbox-build/90-verify-tools.sh
 RUN dnf clean all && rm -rf /var/cache/dnf /var/cache/yum /tmp/*

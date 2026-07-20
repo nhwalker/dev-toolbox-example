@@ -4,6 +4,16 @@
 set -euo pipefail
 
 echo "==> Verifying installed tools"
+
+# JAVA_HOME / JAVA<N>_HOME exports
+# shellcheck disable=SC1091
+source /etc/profile.d/java-homes.sh
+for var in JAVA_HOME JAVA8_HOME JAVA17_HOME JAVA21_HOME JAVA25_HOME; do
+    home=${!var:?${var} is not set}
+    test -x "${home}/bin/javac" || { echo "ERROR: ${var}=${home} has no javac" >&2; exit 1; }
+    echo "${var}=${home}"
+done
+
 gradle --version
 test -x /opt/eclipse/eclipse
 java -version
