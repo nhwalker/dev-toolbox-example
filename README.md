@@ -82,8 +82,11 @@ Cline ships three ways in this image:
   repo to launch the local web app that runs agents in parallel, one
   isolated git worktree per task card. The `kanban` npm package is baked
   into the image, so the board works without a registry fetch.
-- **VS Code extension** — `saoudrizwan.claude-dev` is vendored in `vsix/`
-  and installed as a built-in extension.
+- **VS Code extension** — vendored in `vsix/` and installed as a built-in
+  extension. The file is named `saoudrizwan.claude-dev-*.vsix` because
+  Cline's original name was "Claude Dev" and marketplace extension IDs
+  cannot change after publishing — it is the official Cline extension
+  (display name "Cline", repo `github.com/cline/cline`).
 
 On first use, authenticate with `cline auth` (Cline account or a provider
 API key). Config lives in `~/.cline/`, which Toolbx shares with the host —
