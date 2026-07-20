@@ -20,6 +20,7 @@ TOOL_PACKAGES=(
     code            # VS Code, from the Microsoft repo
     nodejs          # from the nodejs module stream enabled below
     npm
+    podman-remote   # client-only podman; talks to the host's podman socket
 )
 
 # Node.js comes as an AppStream module with no default stream on RHEL 9, so

@@ -34,5 +34,9 @@ cmake --version | head -1
 gdb --version | head -1
 make --version | head -1
 bear --version
+podman --version           # symlink to podman-remote; --version needs no server
+podman-remote --version
+# shellcheck disable=SC1091
+source /etc/profile.d/podman-host.sh   # syntax check; no-op without the host socket
 code --version --user-data-dir /tmp/vscode-smoke || true   # code exits non-zero without a display on some versions
 ls -d /usr/lib/jvm/java-* 2>/dev/null || true

@@ -19,6 +19,7 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 | Eclipse IDE for Java Developers | 2025-12 | curl from download.eclipse.org |
 | Eclipse plugins | whatever is in `eclipse-plugins/` | drop-in p2 update-site zips, baked in at build time |
 | Git + Git LFS | RHEL 9 packaged | UBI / EPEL / Rocky |
+| Podman client (`podman-remote`) | RHEL 9 packaged | UBI AppStream |
 
 `JAVA_HOME` points at JDK 21 by default, and each installed JDK also gets a
 versioned variable: `JAVA8_HOME`, `JAVA17_HOME`, `JAVA21_HOME`,
@@ -105,6 +106,50 @@ allure serve build/allure-results     # one-shot: generate + open in browser
 allure generate --output report ...   # static report
 ```
 
+## Podman and Testcontainers
+
+A toolbox does not run its own container engine — nested podman inside a
+rootless container needs storage and user-namespace workarounds and would
+duplicate the host's image store. Instead the image ships
+**`podman-remote`**, the client-only podman build, and symlinks it to
+`podman`. It talks to the **host's** podman over the rootless API socket
+at `$XDG_RUNTIME_DIR/podman/podman.sock`, which Toolbx already
+bind-mounts into every toolbox (the same mechanism that shares the
+Wayland socket). Containers you start from inside the toolbox are
+ordinary host containers — siblings of the toolbox, not children.
+
+One-time setup **on the host** (the only step the image cannot do for
+you):
+
+```sh
+systemctl --user enable --now podman.socket
+```
+
+Inside the toolbox, `/etc/profile.d/podman-host.sh` then detects the
+socket and exports:
+
+- `CONTAINER_HOST` — so `podman` (and anything using the podman client
+  libraries) targets the host socket explicitly;
+- `DOCKER_HOST` — the podman socket serves the Docker API, so
+  Docker-API clients like **Testcontainers**, docker-java, and
+  docker-compose work against it unchanged. `mvn verify` / `gradle test`
+  with Testcontainers just work — no per-project configuration;
+- `TESTCONTAINERS_RYUK_DISABLED=true` — Ryuk, Testcontainers' cleanup
+  reaper, is unreliable under rootless podman (SELinux blocks its access
+  to the mounted socket, and behavior varies by podman version even with
+  the privileged workaround), so it is off by default. Cleanup falls back
+  to Testcontainers' JVM shutdown hook — containers only leak if the JVM
+  is hard-killed. To try Ryuk anyway, `export
+  TESTCONTAINERS_RYUK_DISABLED=false` before opening the shell; the
+  profile script then also sets
+  `TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true`, the privileged mode
+  Ryuk needs to get past SELinux to the socket.
+
+Each variable is only set if the socket exists and you have not already
+set it yourself. If `podman ps` reports a connection error, the socket is
+not enabled on the host — run the `systemctl --user` command above, then
+open a new shell in the toolbox.
+
 ## Eclipse plugins as offline bundles
 
 The image ships an `eclipse-offline-package` command that mirrors an
@@ -143,6 +188,8 @@ scripts/31-install-eclipse.sh    Eclipse IDE (curl)
 scripts/32-install-cline.sh      Cline CLI + kanban board (npm, global)
 scripts/33-install-allure.sh     Allure 2 commandline (curl, sha256-verified)
 scripts/40-configure-java-homes.sh  JAVA_HOME + versioned JAVA<N>_HOME exports
+scripts/41-configure-podman-remote.sh  podman -> podman-remote symlink + host
+                                 socket exports (CONTAINER_HOST, DOCKER_HOST)
 scripts/50-install-vsix-extensions.sh  Installs vsix/*.vsix into VS Code
 vsix/                            Drop-in folder for VS Code .vsix extensions
 scripts/51-install-eclipse-bundles.sh  Installs eclipse-plugins/*.zip into Eclipse
