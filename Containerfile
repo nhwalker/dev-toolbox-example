@@ -12,7 +12,7 @@ FROM registry.access.redhat.com/ubi9/toolbox:latest
 LABEL com.github.containers.toolbox="true" \
       name="rhel9-dev-toolbox" \
       version="9" \
-      summary="RHEL 9 Toolbx image with Java 8/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, Cline, Allure, git, and the podman client" \
+      summary="RHEL 9 Toolbx image with Java 8/11/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, Cline, Allure, git, and the podman client" \
       usage="Use with the toolbox(1) command: toolbox create --image <this image>"
 
 # Versions for the curl-installed tools. Bump these to upgrade.

@@ -7,7 +7,7 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 
 | Tool | Version(s) | Source |
 | --- | --- | --- |
-| OpenJDK (full devel packages) | 8, 17, 21, 25 | UBI AppStream rpms |
+| OpenJDK (full devel packages) | 8, 11, 17, 21, 25 | UBI AppStream rpms |
 | Maven | RHEL 9 packaged | UBI AppStream |
 | Gradle | 9.2.0 | curl from services.gradle.org (sha256-verified) |
 | Node.js + npm | 22 (LTS) | UBI AppStream `nodejs:22` module |
@@ -22,9 +22,9 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 | Podman client (`podman-remote`) | RHEL 9 packaged | UBI AppStream |
 
 `JAVA_HOME` points at JDK 21 by default, and each installed JDK also gets a
-versioned variable: `JAVA8_HOME`, `JAVA17_HOME`, `JAVA21_HOME`,
-`JAVA25_HOME` (exported via `/etc/profile.d/java-homes.sh`). Handy for
-Maven/Gradle toolchains or per-project overrides like
+versioned variable: `JAVA8_HOME`, `JAVA11_HOME`, `JAVA17_HOME`,
+`JAVA21_HOME`, `JAVA25_HOME` (exported via `/etc/profile.d/java-homes.sh`).
+Handy for Maven/Gradle toolchains or per-project overrides like
 `JAVA_HOME=$JAVA17_HOME mvn verify`. To switch the default `java` on the
 PATH, use `sudo alternatives --config java`.
 
