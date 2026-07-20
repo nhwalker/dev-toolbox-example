@@ -38,18 +38,20 @@ if [[ -n "${AP_SHA256}" ]]; then
     echo "${AP_SHA256}  ${workdir}/async-profiler.tar.gz" | sha256sum --check --strict
 fi
 
-# The tarball unpacks to a single versioned top-level directory
-# (async-profiler-<version>-linux-<arch>); relocate it to
-# /opt/async-profiler without depending on the exact name.
+# The tarball unpacks to a versioned top-level directory
+# (async-profiler-<version>-linux-<arch>); locate it by its bin/asprof
+# rather than assuming the layout, and relocate it to
+# /opt/async-profiler.
 mkdir -p "${workdir}/extract"
 tar --no-same-owner -xzf "${workdir}/async-profiler.tar.gz" -C "${workdir}/extract"
-mapfile -t topdirs < <(find "${workdir}/extract" -mindepth 1 -maxdepth 1 -type d)
-if [[ ${#topdirs[@]} -ne 1 ]]; then
-    echo "ERROR: expected one top-level directory in the async-profiler tarball, found ${#topdirs[@]}" >&2
+mapfile -t asprofs < <(find "${workdir}/extract" -mindepth 2 -maxdepth 3 -type f -name asprof -path '*/bin/asprof')
+if [[ ${#asprofs[@]} -ne 1 ]]; then
+    echo "ERROR: expected exactly one bin/asprof in the tarball, found ${#asprofs[@]}; archive root contains:" >&2
+    ls -la "${workdir}/extract" >&2
     exit 1
 fi
 rm -rf /opt/async-profiler
-mv "${topdirs[0]}" /opt/async-profiler
+mv "$(dirname "$(dirname "${asprofs[0]}")")" /opt/async-profiler
 ln -sfn /opt/async-profiler/bin/asprof /usr/local/bin/asprof
 ln -sfn /opt/async-profiler/bin/jfrconv /usr/local/bin/jfrconv
 

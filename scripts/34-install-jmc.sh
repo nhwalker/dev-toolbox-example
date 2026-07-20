@@ -35,18 +35,20 @@ if [[ -n "${JMC_SHA256}" ]]; then
     echo "${JMC_SHA256}  ${workdir}/jmc.tar.gz" | sha256sum --check --strict
 fi
 
-# The tarball unpacks to a single top-level directory whose name contains
-# spaces ("JDK Mission Control"); relocate it to /opt/jmc without
-# depending on the exact name.
+# The product directory in the tarball is named "JDK Mission Control"
+# (spaces included), but the archive root has carried extra sibling
+# entries across releases — so locate the directory by its jmc launcher
+# rather than assuming the layout, and relocate it to /opt/jmc.
 mkdir -p "${workdir}/extract"
 tar --no-same-owner -xzf "${workdir}/jmc.tar.gz" -C "${workdir}/extract"
-mapfile -t topdirs < <(find "${workdir}/extract" -mindepth 1 -maxdepth 1 -type d)
-if [[ ${#topdirs[@]} -ne 1 ]]; then
-    echo "ERROR: expected one top-level directory in the JMC tarball, found ${#topdirs[@]}" >&2
+mapfile -t launchers < <(find "${workdir}/extract" -mindepth 1 -maxdepth 2 -type f -name jmc)
+if [[ ${#launchers[@]} -ne 1 ]]; then
+    echo "ERROR: expected exactly one jmc launcher in the tarball, found ${#launchers[@]}; archive root contains:" >&2
+    ls -la "${workdir}/extract" >&2
     exit 1
 fi
 rm -rf /opt/jmc
-mv "${topdirs[0]}" /opt/jmc
+mv "$(dirname "${launchers[0]}")" /opt/jmc
 ln -sfn /opt/jmc/jmc /usr/local/bin/jmc
 
 test -x /opt/jmc/jmc
