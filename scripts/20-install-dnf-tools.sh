@@ -18,7 +18,15 @@ TOOL_PACKAGES=(
     git
     git-lfs
     code            # VS Code, from the Microsoft repo
+    nodejs          # from the nodejs module stream enabled below
+    npm
 )
+
+# Node.js comes as an AppStream module with no default stream on RHEL 9, so
+# the major version must be enabled explicitly before installing. 22 is the
+# newest LTS the UBI repos are guaranteed to carry, and satisfies the
+# Cline CLI's >= 22 requirement (see 32-install-cline.sh).
+NODEJS_STREAM=22
 
 # C development toolchain, sized for working with the vscode-clangd
 # extension (shipped via the vsix/ drop-in): clangd itself lives in
@@ -49,6 +57,8 @@ SUPPORT_PACKAGES=(
     which
     procps-ng
 )
+
+dnf -y module enable "nodejs:${NODEJS_STREAM}"
 
 dnf -y install "${JAVA_PACKAGES[@]}" "${TOOL_PACKAGES[@]}" "${C_DEV_PACKAGES[@]}" "${SUPPORT_PACKAGES[@]}"
 
