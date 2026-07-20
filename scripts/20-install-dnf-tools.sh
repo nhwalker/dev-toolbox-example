@@ -7,6 +7,7 @@ set -euo pipefail
 # these (JDK 25 since RHEL 9.8).
 JAVA_PACKAGES=(
     java-1.8.0-openjdk-devel
+    java-11-openjdk-devel
     java-17-openjdk-devel
     java-21-openjdk-devel
     java-25-openjdk-devel

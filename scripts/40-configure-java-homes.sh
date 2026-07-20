@@ -25,7 +25,7 @@ java_home_for() {
 profile=/etc/profile.d/java-homes.sh
 {
     echo "# Generated at image build time by 40-configure-java-homes.sh"
-    for major in 8 17 21 25; do
+    for major in 8 11 17 21 25; do
         if home=$(java_home_for "${major}"); then
             echo "export JAVA${major}_HOME=\"${home}\""
         else
