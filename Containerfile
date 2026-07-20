@@ -12,7 +12,7 @@ FROM registry.access.redhat.com/ubi9/toolbox:latest
 LABEL com.github.containers.toolbox="true" \
       name="rhel9-dev-toolbox" \
       version="9" \
-      summary="RHEL 9 Toolbx image with Java 8/11/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, Cline, Allure, and git" \
+      summary="RHEL 9 Toolbx image with Java 8/11/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, Cline, Allure, git, and the podman client" \
       usage="Use with the toolbox(1) command: toolbox create --image <this image>"
 
 # Versions for the curl-installed tools. Bump these to upgrade.
@@ -76,6 +76,12 @@ RUN chmod 0755 /usr/local/bin/eclipse-offline-package
 # version chosen in 40-configure-java-homes.sh.
 RUN bash /usr/local/share/toolbox-build/40-configure-java-homes.sh
 ENV JAVA_HOME=/usr/lib/jvm/java-21
+
+# Podman client: `podman` is podman-remote (client-only), talking to the
+# host's podman socket that Toolbx shares with the container. Also exports
+# DOCKER_HOST so Testcontainers and other Docker-API clients use the same
+# socket — see "Podman and Testcontainers" in the README.
+RUN bash /usr/local/share/toolbox-build/41-configure-podman-remote.sh
 
 # Final smoke test and cleanup so the layers above stay as small as possible.
 RUN bash /usr/local/share/toolbox-build/90-verify-tools.sh
