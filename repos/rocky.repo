@@ -1,0 +1,29 @@
+# Rocky Linux 9 repos as a FALLBACK source only.
+#
+# priority=200 (dnf default is 99, lower wins) means packages are taken from
+# the UBI / CRB / EPEL repos whenever they exist there, and Rocky is only
+# consulted for packages the public UBI repos do not carry.
+
+[rocky-baseos]
+name=Rocky Linux 9 - BaseOS (fallback)
+baseurl=https://dl.rockylinux.org/pub/rocky/9/BaseOS/$basearch/os/
+enabled=1
+gpgcheck=1
+gpgkey=https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9
+priority=200
+
+[rocky-appstream]
+name=Rocky Linux 9 - AppStream (fallback)
+baseurl=https://dl.rockylinux.org/pub/rocky/9/AppStream/$basearch/os/
+enabled=1
+gpgcheck=1
+gpgkey=https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9
+priority=200
+
+[rocky-crb]
+name=Rocky Linux 9 - CRB (fallback)
+baseurl=https://dl.rockylinux.org/pub/rocky/9/CRB/$basearch/os/
+enabled=1
+gpgcheck=1
+gpgkey=https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9
+priority=200

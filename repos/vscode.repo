@@ -1,0 +1,9 @@
+# Microsoft's official Visual Studio Code rpm repository.
+# https://code.visualstudio.com/docs/setup/linux#_rhel-fedora-and-centos-based-distributions
+
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
