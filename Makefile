@@ -7,7 +7,7 @@ build:
 	$(CONTAINER_ENGINE) build -t $(IMAGE_NAME) -f Containerfile .
 
 lint:
-	bash -n scripts/*.sh
+	bash -n scripts/*.sh bin/*
 	@echo "shell syntax OK"
 
 create: build

@@ -16,6 +16,7 @@ done
 
 gradle --version
 test -x /opt/eclipse/eclipse
+eclipse-offline-package --help >/dev/null
 java -version
 javac -version
 mvn --version

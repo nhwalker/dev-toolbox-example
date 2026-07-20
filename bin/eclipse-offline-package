@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# Mirror an Eclipse plugin (and everything it depends on) from a p2 update
+# site into an offline bundle: a zip of the mirrored update site plus a
+# .ius sidecar file recording which installable units to install. Drop the
+# pair into this repo's eclipse-plugins/ folder to bake the plugin into the
+# toolbox image at build time (see scripts/51-install-eclipse-bundles.sh),
+# or carry them to an air-gapped machine.
+#
+# Uses the headless p2 applications of an existing Eclipse install, so it
+# must run where `eclipse` is on the PATH (as in this toolbox image);
+# override with ECLIPSE=/path/to/eclipse.
+#
+# Examples:
+#   # See what an update site offers
+#   eclipse-offline-package --site https://download.eclipse.org/egit/updates --list
+#
+#   # Bundle one feature (features need the .feature.group suffix)
+#   eclipse-offline-package --site https://download.eclipse.org/egit/updates \
+#       --iu org.eclipse.egit.feature.group --name egit
+#   # -> ./egit.zip + ./egit.ius
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: eclipse-offline-package --site URL [options]
+
+Mirror an Eclipse p2 update site into an offline bundle: NAME.zip (the
+mirrored update site) plus a NAME.ius sidecar listing the IUs to install.
+Drop both into this repo's eclipse-plugins/ folder to bake the plugin into
+the image at build time, or carry them to an offline machine.
+
+Options:
+  -s, --site URL      p2 update site to mirror (required)
+  -i, --iu IU         installable unit to bundle; repeatable, or a single
+                      comma-separated list. Features need the
+                      ".feature.group" suffix. Dependencies are mirrored
+                      automatically. Omit to mirror the entire site — no
+                      .ius sidecar is written then, so the zip cannot be
+                      used with the eclipse-plugins/ drop-in folder.
+  -n, --name NAME     bundle name (default: eclipse-plugin-offline);
+                      outputs are NAME.zip and NAME.ius
+  -o, --output FILE   output zip path (default: ./NAME.zip); the .ius
+                      sidecar is written next to it
+      --list          list the IUs available on the site and exit
+      --ignore-errors keep mirroring past download errors (p2 -ignoreErrors)
+  -h, --help          show this help
+
+The zip holds the p2 repository at its root, so Eclipse can also consume
+it directly: Help > Install New Software... > Add... > Archive...
+EOF
+}
+
+SITE=""
+NAME="eclipse-plugin-offline"
+OUTPUT=""
+LIST=no
+IGNORE_ERRORS=no
+IUS=()
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -s|--site)       SITE=${2:?--site needs a URL}; shift 2 ;;
+        -i|--iu)         IUS+=("${2:?--iu needs an IU id}"); shift 2 ;;
+        -n|--name)       NAME=${2:?--name needs a value}; shift 2 ;;
+        -o|--output)     OUTPUT=${2:?--output needs a file}; shift 2 ;;
+        --list)          LIST=yes; shift ;;
+        --ignore-errors) IGNORE_ERRORS=yes; shift ;;
+        -h|--help)       usage; exit 0 ;;
+        *) echo "ERROR: unknown argument: $1" >&2; usage >&2; exit 2 ;;
+    esac
+done
+
+if [[ -z ${SITE} ]]; then
+    echo "ERROR: --site is required" >&2
+    usage >&2
+    exit 2
+fi
+
+ECLIPSE=${ECLIPSE:-eclipse}
+if ! command -v "${ECLIPSE}" >/dev/null 2>&1; then
+    echo "ERROR: '${ECLIPSE}' not found on PATH; set ECLIPSE=/path/to/eclipse" >&2
+    exit 1
+fi
+command -v zip >/dev/null 2>&1 || { echo "ERROR: 'zip' not found on PATH" >&2; exit 1; }
+
+workdir=$(mktemp -d)
+trap 'rm -rf "${workdir}"' EXIT
+
+# Run a headless p2 application. -configuration/-data point into the temp
+# dir so this works even when the Eclipse install itself is read-only for
+# the current user (as /opt/eclipse is inside the toolbox).
+run_p2() {
+    "${ECLIPSE}" -nosplash -consoleLog \
+        -configuration "${workdir}/p2-config" \
+        -data "${workdir}/p2-data" \
+        "$@" \
+        -vmargs -Djava.awt.headless=true
+}
+
+if [[ ${LIST} == yes ]]; then
+    run_p2 -application org.eclipse.equinox.p2.director \
+        -repository "${SITE}" -list
+    exit 0
+fi
+
+iu_list=""
+if [[ ${#IUS[@]} -gt 0 ]]; then
+    iu_list=$(IFS=,; echo "${IUS[*]}")
+fi
+
+repo=${workdir}/repository
+mirror_args=(-source "${SITE}" -destination "file:${repo}" -writeMode clean)
+if [[ -n ${iu_list} ]]; then
+    # -roots slices the mirror down to the given IUs plus their dependencies.
+    mirror_args+=(-roots "${iu_list}")
+fi
+if [[ ${IGNORE_ERRORS} == yes ]]; then
+    mirror_args+=(-ignoreErrors)
+fi
+
+echo "==> Mirroring p2 metadata from ${SITE}"
+run_p2 -application org.eclipse.equinox.p2.metadata.repository.mirrorApplication \
+    "${mirror_args[@]}"
+
+echo "==> Mirroring p2 artifacts from ${SITE}"
+run_p2 -application org.eclipse.equinox.p2.artifact.repository.mirrorApplication \
+    "${mirror_args[@]}"
+
+OUTPUT=${OUTPUT:-${NAME}.zip}
+case ${OUTPUT} in
+    /*) ;;
+    *) OUTPUT=${PWD}/${OUTPUT} ;;
+esac
+
+echo "==> Zipping mirrored repository"
+rm -f "${OUTPUT}"
+(cd "${repo}" && zip -qr "${OUTPUT}" .)
+echo "==> Wrote ${OUTPUT}"
+
+if [[ -n ${iu_list} ]]; then
+    sidecar=${OUTPUT%.zip}.ius
+    [[ ${sidecar} != "${OUTPUT}" ]] || sidecar=${OUTPUT}.ius
+    {
+        echo "# IUs to install from $(basename "${OUTPUT}"); one per line,"
+        echo "# '#' starts a comment. Read by scripts/51-install-eclipse-bundles.sh."
+        tr ',' '\n' <<< "${iu_list}"
+    } > "${sidecar}"
+    echo "==> Wrote ${sidecar}"
+    echo "Drop both files into eclipse-plugins/ to bake the plugin into the image."
+else
+    echo "NOTE: no --iu given, so no .ius sidecar was written. The zip is"
+    echo "usable manually (Eclipse: Help > Install New Software... > Add... >"
+    echo "Archive...) but not with the eclipse-plugins/ drop-in folder."
+fi

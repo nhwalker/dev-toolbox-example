@@ -42,6 +42,18 @@ RUN ECLIPSE_RELEASE="${ECLIPSE_RELEASE}" \
 COPY vsix/ /usr/local/share/toolbox-build/vsix/
 RUN bash /usr/local/share/toolbox-build/50-install-vsix-extensions.sh
 
+# Eclipse plugin drop-in: every <name>.zip (a mirrored p2 update site made
+# with bin/eclipse-offline-package) with a <name>.ius sidecar listing the
+# IUs is installed into /opt/eclipse, offline. The COPY sits directly above
+# its RUN so changing bundle contents only rebuilds this layer.
+COPY eclipse-plugins/ /usr/local/share/toolbox-build/eclipse-plugins/
+RUN bash /usr/local/share/toolbox-build/51-install-eclipse-bundles.sh
+
+# User-facing helper commands shipped with the image.
+# eclipse-offline-package creates the plugin bundles described above.
+COPY bin/ /usr/local/bin/
+RUN chmod 0755 /usr/local/bin/eclipse-offline-package
+
 # JAVA_HOME (default JDK 21) plus JAVA<N>_HOME for every installed JDK,
 # exported for login shells via /etc/profile.d/java-homes.sh. The ENV below
 # additionally covers non-login shells; it must match the default major

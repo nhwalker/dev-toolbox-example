@@ -28,7 +28,7 @@ jobs:
       - name: Shellcheck build scripts
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q shellcheck
-          shellcheck scripts/*.sh
+          shellcheck scripts/*.sh bin/*
 
       - name: Hadolint Containerfile
         uses: hadolint/hadolint-action@v3.1.0

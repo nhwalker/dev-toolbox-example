@@ -14,6 +14,7 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 | VS Code extensions | clangd 0.6.0 + whatever is in `vsix/` | drop-in `.vsix` files, baked in at build time |
 | C toolchain | clang/clangd, gcc, make, cmake, gdb, bear | UBI AppStream + EPEL (bear) |
 | Eclipse IDE for Java Developers | 2025-12 | curl from download.eclipse.org |
+| Eclipse plugins | whatever is in `eclipse-plugins/` | drop-in p2 update-site zips, baked in at build time |
 | Git + Git LFS | RHEL 9 packaged | UBI / EPEL / Rocky |
 
 `JAVA_HOME` points at JDK 21 by default, and each installed JDK also gets a
@@ -67,6 +68,31 @@ GUI apps (VS Code, Eclipse) work inside a toolbox because Toolbx shares the
 host's Wayland/X11 sockets — just run `code` or `eclipse` from inside the
 container.
 
+## Eclipse plugins as offline bundles
+
+The image ships an `eclipse-offline-package` command that mirrors an
+Eclipse p2 update site into an offline bundle: a `<name>.zip` of the update
+site (plugin + all dependencies) and a `<name>.ius` sidecar listing the
+installable units. Like the `vsix/` folder for VS Code, bundles dropped
+into `eclipse-plugins/` are installed into the image's Eclipse at build
+time — with no network needed, so plugins survive air-gapped builds.
+
+```sh
+# See what an update site offers
+eclipse-offline-package --site https://download.eclipse.org/egit/updates --list
+
+# Bundle one feature and its dependencies (features need .feature.group)
+eclipse-offline-package --site https://download.eclipse.org/egit/updates \
+    --iu org.eclipse.egit.feature.group --name egit
+mv egit.zip egit.ius eclipse-plugins/
+# rebuild the image
+```
+
+The zip holds the p2 repository at its root, so on any offline machine it
+also works directly in the Eclipse UI via *Help > Install New Software... >
+Add... > Archive...*. See `eclipse-plugins/README.md` and
+`eclipse-offline-package --help` for details.
+
 ## Repository layout
 
 ```
@@ -80,6 +106,10 @@ scripts/31-install-eclipse.sh    Eclipse IDE (curl)
 scripts/40-configure-java-homes.sh  JAVA_HOME + versioned JAVA<N>_HOME exports
 scripts/50-install-vsix-extensions.sh  Installs vsix/*.vsix into VS Code
 vsix/                            Drop-in folder for VS Code .vsix extensions
+scripts/51-install-eclipse-bundles.sh  Installs eclipse-plugins/*.zip into Eclipse
+eclipse-plugins/                 Drop-in folder for Eclipse plugin bundles
+                                 (zip + .ius pairs, see its README)
+bin/eclipse-offline-package      Creates those bundles from a p2 update site
 scripts/90-verify-tools.sh       Final smoke test of every installed tool
 .github/workflows/build-image.yml  CI/CD: lint + build (PRs), publish to
                                    GHCR (main, weekly schedule, manual runs)
