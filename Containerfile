@@ -36,6 +36,12 @@ RUN GRADLE_VERSION="${GRADLE_VERSION}" \
 RUN ECLIPSE_RELEASE="${ECLIPSE_RELEASE}" \
     bash /usr/local/share/toolbox-build/31-install-eclipse.sh
 
+# VS Code extension drop-in: every .vsix in the repo's vsix/ directory is
+# installed as a built-in extension. The COPY sits directly above its RUN
+# so changing vsix contents only rebuilds this layer.
+COPY vsix/ /usr/local/share/toolbox-build/vsix/
+RUN bash /usr/local/share/toolbox-build/50-install-vsix-extensions.sh
+
 # JAVA_HOME (default JDK 21) plus JAVA<N>_HOME for every installed JDK,
 # exported for login shells via /etc/profile.d/java-homes.sh. The ENV below
 # additionally covers non-login shells; it must match the default major
