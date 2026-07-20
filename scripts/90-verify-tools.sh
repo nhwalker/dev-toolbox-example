@@ -16,6 +16,12 @@ done
 
 gradle --version
 test -x /opt/eclipse/eclipse
+eclipse-offline-package --help >/dev/null
+node --version
+npm --version
+cline --version
+command -v kanban >/dev/null || { echo "ERROR: kanban not on PATH" >&2; exit 1; }
+allure --version
 java -version
 javac -version
 mvn --version

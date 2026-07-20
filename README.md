@@ -10,10 +10,14 @@ A custom [Toolbx](https://containertoolbx.org/) image for Red Hat / Fedora
 | OpenJDK (full devel packages) | 8, 17, 21, 25 | UBI AppStream rpms |
 | Maven | RHEL 9 packaged | UBI AppStream |
 | Gradle | 9.2.0 | curl from services.gradle.org (sha256-verified) |
+| Node.js + npm | 22 (LTS) | UBI AppStream `nodejs:22` module |
+| Cline CLI + kanban board | 3.0.46 / 0.1.70 | npm (installed globally at build time) |
+| Allure test reports | 2.44.0 | curl from Maven Central (sha256-verified) |
 | VS Code | latest | Microsoft rpm repo |
-| VS Code extensions | clangd 0.6.0 + whatever is in `vsix/` | drop-in `.vsix` files, baked in at build time |
+| VS Code extensions | clangd 0.6.0, Cline 4.0.9 + whatever is in `vsix/` | drop-in `.vsix` files, baked in at build time |
 | C toolchain | clang/clangd, gcc, make, cmake, gdb, bear | UBI AppStream + EPEL (bear) |
 | Eclipse IDE for Java Developers | 2025-12 | curl from download.eclipse.org |
+| Eclipse plugins | whatever is in `eclipse-plugins/` | drop-in p2 update-site zips, baked in at build time |
 | Git + Git LFS | RHEL 9 packaged | UBI / EPEL / Rocky |
 
 `JAVA_HOME` points at JDK 21 by default, and each installed JDK also gets a
@@ -67,6 +71,65 @@ GUI apps (VS Code, Eclipse) work inside a toolbox because Toolbx shares the
 host's Wayland/X11 sockets — just run `code` or `eclipse` from inside the
 container.
 
+## Cline
+
+Cline ships three ways in this image:
+
+- **TUI** — run `cline` (or `cline --tui`) inside the toolbox for the
+  interactive terminal UI: plan/act toggle, slash commands, file mentions,
+  live tool approvals.
+- **Kanban board** — run `cline kanban` (or `kanban` directly) from a git
+  repo to launch the local web app that runs agents in parallel, one
+  isolated git worktree per task card. The `kanban` npm package is baked
+  into the image, so the board works without a registry fetch.
+- **VS Code extension** — vendored in `vsix/` and installed as a built-in
+  extension. The file is named `saoudrizwan.claude-dev-*.vsix` because
+  Cline's original name was "Claude Dev" and marketplace extension IDs
+  cannot change after publishing — it is the official Cline extension
+  (display name "Cline", repo `github.com/cline/cline`).
+
+On first use, authenticate with `cline auth` (Cline account or a provider
+API key). Config lives in `~/.cline/`, which Toolbx shares with the host —
+so a login done inside the toolbox is also visible to host installs of
+Cline and vice versa. `cline doctor` diagnoses setup issues.
+
+## Allure test reports
+
+The [Allure 2](https://allurereport.org/) commandline is installed at
+`/opt/allure` with `allure` on the PATH (it runs on the image's JRE). Use
+it to render reports from test result folders produced by JUnit/TestNG/
+Cucumber runs:
+
+```sh
+allure serve build/allure-results     # one-shot: generate + open in browser
+allure generate --output report ...   # static report
+```
+
+## Eclipse plugins as offline bundles
+
+The image ships an `eclipse-offline-package` command that mirrors an
+Eclipse p2 update site into an offline bundle: a `<name>.zip` of the update
+site (plugin + all dependencies) and a `<name>.ius` sidecar listing the
+installable units. Like the `vsix/` folder for VS Code, bundles dropped
+into `eclipse-plugins/` are installed into the image's Eclipse at build
+time — with no network needed, so plugins survive air-gapped builds.
+
+```sh
+# See what an update site offers
+eclipse-offline-package --site https://download.eclipse.org/egit/updates --list
+
+# Bundle one feature and its dependencies (features need .feature.group)
+eclipse-offline-package --site https://download.eclipse.org/egit/updates \
+    --iu org.eclipse.egit.feature.group --name egit
+mv egit.zip egit.ius eclipse-plugins/
+# rebuild the image
+```
+
+The zip holds the p2 repository at its root, so on any offline machine it
+also works directly in the Eclipse UI via *Help > Install New Software... >
+Add... > Archive...*. See `eclipse-plugins/README.md` and
+`eclipse-offline-package --help` for details.
+
 ## Repository layout
 
 ```
@@ -77,9 +140,15 @@ scripts/10-setup-repos.sh        Enable CRB, install EPEL
 scripts/20-install-dnf-tools.sh  Everything installable via dnf
 scripts/30-install-gradle.sh     Gradle (curl, sha256-verified)
 scripts/31-install-eclipse.sh    Eclipse IDE (curl)
+scripts/32-install-cline.sh      Cline CLI + kanban board (npm, global)
+scripts/33-install-allure.sh     Allure 2 commandline (curl, sha256-verified)
 scripts/40-configure-java-homes.sh  JAVA_HOME + versioned JAVA<N>_HOME exports
 scripts/50-install-vsix-extensions.sh  Installs vsix/*.vsix into VS Code
 vsix/                            Drop-in folder for VS Code .vsix extensions
+scripts/51-install-eclipse-bundles.sh  Installs eclipse-plugins/*.zip into Eclipse
+eclipse-plugins/                 Drop-in folder for Eclipse plugin bundles
+                                 (zip + .ius pairs, see its README)
+bin/eclipse-offline-package      Creates those bundles from a p2 update site
 scripts/90-verify-tools.sh       Final smoke test of every installed tool
 .github/workflows/build-image.yml  CI/CD: lint + build (PRs), publish to
                                    GHCR (main, weekly schedule, manual runs)
@@ -87,8 +156,9 @@ scripts/90-verify-tools.sh       Final smoke test of every installed tool
 
 ## Bumping versions
 
-Gradle, Eclipse, and the JDK-25 fallback versions are `ARG`s at the top of
-the `Containerfile` — edit them there or override at build time, e.g.:
+Gradle, Eclipse, Cline (+ kanban), and Allure versions are `ARG`s at the
+top of the `Containerfile` — edit them there or override at build time,
+e.g.:
 
 ```sh
 podman build --build-arg GRADLE_VERSION=9.3.0 -t rhel9-dev-toolbox .
@@ -96,3 +166,5 @@ podman build --build-arg GRADLE_VERSION=9.3.0 -t rhel9-dev-toolbox .
 
 When bumping Gradle, update `GRADLE_SHA256` too — the official checksum for
 each release is listed at <https://services.gradle.org/versions/all>.
+Likewise for Allure: `ALLURE_SHA256` is published next to the artifact on
+Maven Central as `allure-commandline-<version>.tgz.sha256`.

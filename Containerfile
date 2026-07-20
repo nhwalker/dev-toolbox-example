@@ -12,7 +12,7 @@ FROM registry.access.redhat.com/ubi9/toolbox:latest
 LABEL com.github.containers.toolbox="true" \
       name="rhel9-dev-toolbox" \
       version="9" \
-      summary="RHEL 9 Toolbx image with Java 8/17/21/25, Maven, Gradle, VS Code, Eclipse, and git" \
+      summary="RHEL 9 Toolbx image with Java 8/17/21/25, Maven, Gradle, Node.js, VS Code, Eclipse, Cline, Allure, and git" \
       usage="Use with the toolbox(1) command: toolbox create --image <this image>"
 
 # Versions for the curl-installed tools. Bump these to upgrade.
@@ -20,6 +20,12 @@ LABEL com.github.containers.toolbox="true" \
 ARG GRADLE_VERSION=9.2.0
 ARG GRADLE_SHA256=df67a32e86e3276d011735facb1535f64d0d88df84fa87521e90becc2d735444
 ARG ECLIPSE_RELEASE=2025-12
+# Cline CLI + its kanban board (npm packages), see 32-install-cline.sh
+ARG CLINE_VERSION=3.0.46
+ARG CLINE_KANBAN_VERSION=0.1.70
+# Allure checksum comes from Maven Central (<artifact>.tgz.sha256)
+ARG ALLURE_VERSION=2.44.0
+ARG ALLURE_SHA256=7021a90828c00cd6ec992027cce48e8a94bd87fad43d0c2dcac4795cadc178d7
 
 COPY repos/ /etc/yum.repos.d/
 COPY scripts/ /usr/local/share/toolbox-build/
@@ -36,11 +42,33 @@ RUN GRADLE_VERSION="${GRADLE_VERSION}" \
 RUN ECLIPSE_RELEASE="${ECLIPSE_RELEASE}" \
     bash /usr/local/share/toolbox-build/31-install-eclipse.sh
 
+# Cline CLI (TUI) + kanban board, installed globally via npm; Node.js 22
+# comes from the AppStream module installed in 20-install-dnf-tools.sh.
+RUN CLINE_VERSION="${CLINE_VERSION}" \
+    CLINE_KANBAN_VERSION="${CLINE_KANBAN_VERSION}" \
+    bash /usr/local/share/toolbox-build/32-install-cline.sh
+
+RUN ALLURE_VERSION="${ALLURE_VERSION}" \
+    ALLURE_SHA256="${ALLURE_SHA256}" \
+    bash /usr/local/share/toolbox-build/33-install-allure.sh
+
 # VS Code extension drop-in: every .vsix in the repo's vsix/ directory is
 # installed as a built-in extension. The COPY sits directly above its RUN
 # so changing vsix contents only rebuilds this layer.
 COPY vsix/ /usr/local/share/toolbox-build/vsix/
 RUN bash /usr/local/share/toolbox-build/50-install-vsix-extensions.sh
+
+# Eclipse plugin drop-in: every <name>.zip (a mirrored p2 update site made
+# with bin/eclipse-offline-package) with a <name>.ius sidecar listing the
+# IUs is installed into /opt/eclipse, offline. The COPY sits directly above
+# its RUN so changing bundle contents only rebuilds this layer.
+COPY eclipse-plugins/ /usr/local/share/toolbox-build/eclipse-plugins/
+RUN bash /usr/local/share/toolbox-build/51-install-eclipse-bundles.sh
+
+# User-facing helper commands shipped with the image.
+# eclipse-offline-package creates the plugin bundles described above.
+COPY bin/ /usr/local/bin/
+RUN chmod 0755 /usr/local/bin/eclipse-offline-package
 
 # JAVA_HOME (default JDK 21) plus JAVA<N>_HOME for every installed JDK,
 # exported for login shells via /etc/profile.d/java-homes.sh. The ENV below
